@@ -18,7 +18,15 @@ class _HomePageState extends State<HomePage> {
   final newExpenseTypeController = TextEditingController();
   final newExpenseCategoryController = TextEditingController();
 
-  double id = 0;
+  int id = 0;
+  int idToUpdate = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Provider.of<ExpenseData>(context, listen: false).prepareData();
+  }
 
   void addNewExpense() {
     showDialog(
@@ -74,12 +82,12 @@ class _HomePageState extends State<HomePage> {
           //Save button
           MaterialButton(
             onPressed: save,
-            child: Text('Save'),
+            child: const Text('Save'),
           ),
 
           MaterialButton(
             onPressed: cancel,
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -87,10 +95,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   void updateExpense(ExpenseItem expense) {
+    idToUpdate = expense.id;
+    newExpenseNameController.text = expense.name;
+    List<String> amountParts = expense.amount.split('.');
+    newExpenseDollarController.text = amountParts[0];
+    newExpenseCentsController.text = amountParts[1];
+    newExpenseTypeController.text = expense.type;
+    newExpenseCategoryController.text = expense.category;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Update Expense'),
+        title: const Text('Add new Expense'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -121,19 +136,31 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ],
-            )
+            ),
+            TextField(
+              controller: newExpenseTypeController,
+              decoration: const InputDecoration(
+                hintText: "Type",
+              ),
+            ),
+            TextField(
+              controller: newExpenseCategoryController,
+              decoration: const InputDecoration(
+                hintText: "Category",
+              ),
+            ),
           ],
         ),
         actions: [
           //Save button
           MaterialButton(
-            onPressed: save,
-            child: Text('Save'),
+            onPressed: update,
+            child: const Text('Update'),
           ),
 
           MaterialButton(
             onPressed: cancel,
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -171,6 +198,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void update() {
+    if (newExpenseNameController.text.isNotEmpty &&
+        newExpenseDollarController.text.isNotEmpty &&
+        newExpenseCentsController.text.isNotEmpty &&
+        newExpenseTypeController.text.isNotEmpty &&
+        newExpenseCategoryController.text.isNotEmpty) {
+      String amount =
+          '${newExpenseDollarController.text}.${newExpenseCentsController.text}';
+
+      ExpenseItem newExpense = ExpenseItem(
+        id: idToUpdate,
+        name: newExpenseNameController.text,
+        amount: amount,
+        dateTime: DateTime.now(),
+        type: newExpenseTypeController.text,
+        category: newExpenseCategoryController.text,
+      );
+      Provider.of<ExpenseData>(context, listen: false)
+          .updateExpense(newExpense);
+
+      Navigator.pop(context);
+      clear();
+    }
+  }
+
   void cancel() {
     Navigator.pop(context);
     clear();
@@ -180,6 +232,8 @@ class _HomePageState extends State<HomePage> {
     newExpenseNameController.clear();
     newExpenseDollarController.clear();
     newExpenseCentsController.clear();
+    newExpenseTypeController.clear();
+    newExpenseCategoryController.clear();
   }
 
   @override
@@ -189,7 +243,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.grey[300],
         floatingActionButton: FloatingActionButton(
           onPressed: addNewExpense,
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
         ),
         body: ListView.builder(
           itemCount: value.getAllExpenseList().length,

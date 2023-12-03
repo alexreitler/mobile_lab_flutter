@@ -1,5 +1,5 @@
 class ExpenseItem {
-  final double id;
+  final int id;
   String name;
   String amount;
   DateTime dateTime;
